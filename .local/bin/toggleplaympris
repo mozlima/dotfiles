@@ -1,0 +1,2 @@
+#!/bin/sh
+playerctl -a status | grep -q -F Playing && playerctl -a pause || playerctl -a play
