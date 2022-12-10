@@ -1,0 +1,47 @@
+#!/bin/sh
+
+arg1=${1:-help}
+arg2=${2:-$PWD}
+
+if [ "$arg1" = 'special' ]; then
+	printf "\033]0;Find paths with special chars\a"
+	LC_ALL=C find "$arg2" \
+		-name '*[[:cntrl:]<>:"\\|?*]*' \
+		-o -iname 'CON' \
+		-o -iname 'PRN' \
+		-o -iname 'AUX' \
+		-o -iname 'NUL' \
+		-o -iname 'COM[1-9]' \
+		-o -iname 'LPT[1-9]' \
+		-o -name '* ' \
+		-o -name '?*.' 
+elif [ "$arg1" = 'case' ]; then
+	printf "\033]0;Find duplicates file/folder names ignoring case\a"
+	find "$arg2" \
+	| sort \
+	| LC_ALL=C tr '[:upper:]' '[:lower:]' \
+	| LC_ALL=C uniq -c \
+	| grep -v '^\s*1\s' \
+	| cut -c '9-' \
+	| while IFS= read -r path; do
+		find "$arg2" -ipath "$path"
+		echo
+	done
+elif [ "$arg1" = 'length' ]; then
+	printf "\033]0;Find big paths\a"
+	find "$arg2" | while IFS= read -r path; do
+		if [ "${#path}" -gt 260 ]; then
+			printf '%s\n' "$path"
+		fi
+	done
+else
+	cat << EOF
+Usage: $(basename "$0") COMMAND [PATH]
+Find problems related to file/folder names
+
+Commands:
+  special		Find paths with special chars"
+  case			Find duplicates file/folder names ignoring case"
+  length		Find big paths"
+EOF
+fi
