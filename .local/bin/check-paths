@@ -40,8 +40,8 @@ Usage: $(basename "$0") COMMAND [PATH]
 Find problems related to file/folder names
 
 Commands:
-  special		Find paths with special chars"
-  case			Find duplicates file/folder names ignoring case"
+  special		Find paths with special chars
+  case			Find duplicates file/folder names ignoring case
   length		Find big paths"
 EOF
 fi
