@@ -1,0 +1,25 @@
+#!/bin/sh
+
+if [ $EUID != 0 ]; then
+    sudo "$0" "$@"
+    exit $?
+fi
+
+OUT_DIR="$1"
+
+if [ ! -d "$OUT_DIR" ]; then
+	echo "${0}: Can not find output folder: ${OUT_DIR}" 1>&2
+	exit 1
+fi
+
+for i in {/dev/sd*,/dev/nvme*}; do
+	if cryptsetup luksDump $i &>/dev/null; then
+		INFO=$(udevadm info --query=property --property='ID_PART_ENTRY_NUMBER,ID_SERIAL' --name=$i)
+		ID_SERIAL=$(sed -n 's/.*ID_SERIAL=//p' <<< "$INFO")
+		ID_PART_ENTRY_NUMBER=$(sed -n 's/.*ID_PART_ENTRY_NUMBER=//p' <<< "$INFO")
+		#DATE=$(date '+%Y-%m-%d-%H-%M')
+		#FILE_NAME="${ID_SERIAL}_PART_${ID_PART_ENTRY_NUMBER}_DATE_${DATE}.bin"
+		FILE_NAME="ID_SERIAL_${ID_SERIAL}_PART_${ID_PART_ENTRY_NUMBER}.bin"
+		cryptsetup luksHeaderBackup $i --header-backup-file "${OUT_DIR}/${FILE_NAME}"
+	fi
+done
