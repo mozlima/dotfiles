@@ -1,0 +1,2 @@
+#!/bin/sh
+sudo -u http darkhttpd ./ --no-server-id --maxconn 8
