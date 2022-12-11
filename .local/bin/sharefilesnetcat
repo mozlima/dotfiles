@@ -1,0 +1,40 @@
+#!/bin/sh
+
+arg1=${1:-help}
+arg2=$2
+arg3=$3
+script_name=$(basename "$0")
+
+if ! nc -h 2>&1 | grep -q -i 'openbsd netcat'; then
+	echo 'We need OpenBSD netcat version!'
+	nc -h 2>&1 | head -1
+	exit 1
+fi
+
+if [ "$arg1" = 'receive' ]; then
+	arg2=${2:-$PWD}
+	msg="$script_name send "
+	echo "To send files to '$arg2' use:"
+	ip a show | sed -e "s/^.*inet[6]*\s*\([^\s]*\)\/.*$/$msg\'\1\' \/path\/to\/files/;t;d"
+	nc -6 -q 2 -l -p 1234 | pv -rbW | tar xv --skip-old-files -C "$arg2"
+elif [ "$arg1" = "send" ] && [ -n "$2" ]; then
+	arg2="$2"
+	shift 2;
+	tar cv "$@" | pv -rbW | nc -6 -q 2 "$arg2" 1234
+	if [ $? -gt 0 ]; then
+		echo "Failed to send files to '$arg2'"
+		echo "Check target '$arg2' is ready to receive"
+	fi
+else
+	cat << EOF
+Usage: $script_name  [receive [path|PWD]] or [send IP [path|PWD]]
+Send/Receive files using netcat
+
+Commands:
+  receive		Wait and receive files on 'path' or 
+			current directory if not path set
+			
+  send			Send files to IP from 'path' or 
+			current directory if not path set
+EOF
+fi
